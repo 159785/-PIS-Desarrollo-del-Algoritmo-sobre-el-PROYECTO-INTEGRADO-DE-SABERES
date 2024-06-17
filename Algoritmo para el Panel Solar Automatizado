@@ -1,0 +1,135 @@
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+
+#define PI 3.14159265359
+
+// Función para determinar si un año es bisiesto
+int es_bisiesto(int ano) {
+    if (ano % 4 == 0) {
+        if (ano % 100 == 0) {
+            if (ano % 400 == 0) {
+                return 1;
+            }
+            return 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+// Función para calcular el número de días transcurridos desde el 1 de enero
+int calcular_numero_dias(int mes, int dia, int ano) {
+    int dias_por_mes[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    int N = dia;
+    
+    for (int i = 0; i < mes - 1; i++) {
+        N += dias_por_mes[i];
+    }
+
+    if (mes > 2 && es_bisiesto(ano)) {
+        N += 1;
+    }
+
+    return N;
+}
+
+// Función para calcular el ángulo de declinación solar
+double calcular_angulo_declinacion(int N) {
+    double Term_1 = -23.44;
+    double Term_2 = (360.0 / 365.0) * (N + 10);
+    double DS_rad = Term_2 * (PI / 180.0);
+    double COSX = cos(DS_rad);
+    double Decl = Term_1 * COSX;
+    return Decl * (PI / 180.0);  // Convertir a radianes
+}
+
+// Función para calcular la ecuación del tiempo
+double calcular_ecuacion_tiempo(int N) {
+    double B = (360.0 / 365.0) * (N - 81);
+    B = B * (PI / 180.0);
+    double EoT = 9.87 * sin(2 * B) - 7.53 * cos(B) - 1.5 * sin(B);
+    return EoT;
+}
+
+// Función para calcular el tiempo solar verdadero
+double calcular_TSV(double hr, double min, double Long, double EoT) {
+    double hr_local = hr + (min / 60.0);
+    double zona_hor = -5;
+    double long_stand = zona_hor * 15;
+    double TSV = hr_local + (((4 * (Long - long_stand)) + EoT) / 60.0);
+    return TSV;
+}
+
+// Función para calcular la hora GMT
+double calcular_H(double TSV) {
+    double H = 15 * (TSV - 12);
+    return H * (PI / 180.0);  // Convertir a radianes
+}
+
+// Función para calcular el ángulo de elevación solar
+double calcular_elevacion(double Decl, double Lat, double H) {
+    return asin(sin(Decl) * sin(Lat) + cos(Decl) * cos(Lat) * cos(H));
+}
+
+// Función para calcular el azimut principal
+double calcular_Azimut(double Decl, double Elev, double Lat, double H) {
+    double Azim = acos((sin(Decl) - sin(Elev) * sin(Lat)) / (cos(Elev) * cos(Lat)));
+    if (H > 0) {
+        Azim = 2 * PI - Azim;
+    }
+    return Azim;
+}
+
+int main() {
+    double Lat = -4.0305524 * (PI / 180.0);  // Convertir a radianes
+    double Long = -79.1995725;
+
+    // Fecha especificada
+    int dia = 15;
+    int mes = 6;
+    int ano = 2024;
+
+    // Calcular el número de días transcurridos
+    int N = calcular_numero_dias(mes, dia, ano);
+
+    // Calcular el ángulo de declinación solar
+    double Decl = calcular_angulo_declinacion(N);
+
+    // Calcular la ecuación del tiempo
+    double EoT = calcular_ecuacion_tiempo(N);
+
+    // Imprimir cabecera
+    printf("Fecha: %d/%d/%d\n", dia, mes, ano);
+    printf("Coordenadas: %.7f, %.7f\n", -4.0305524, -79.1995725);
+    printf("Hora\t\tElevación\tAzimut\n");
+
+    // Calcular e imprimir elevación y azimut cada 5 minutos desde las 07:20 hasta las 19:14
+    for (int hr = 7; hr <= 19; hr++) {
+        for (int min = 0; min < 60; min += 5) {
+            if (hr == 7 && min < 20) continue; // Saltar hasta las 07:20
+            if (hr == 19 && min > 14) break; // Terminar a las 19:14
+
+            // Calcular el tiempo solar verdadero
+            double TSV = calcular_TSV(hr, min, Long, EoT);
+
+            // Calcular la hora GMT
+            double H = calcular_H(TSV);
+
+            // Calcular la elevación solar
+            double Elev = calcular_elevacion(Decl, Lat, H);
+
+            // Calcular el azimut solar
+            double Azimut = calcular_Azimut(Decl, Elev, Lat, H);
+
+            // Convertir resultados a grados para imprimir
+            Elev *= (180.0 / PI);
+            Azimut *= (180.0 / PI);
+
+            // Imprimir resultados
+            printf("%02d:%02d:00\t%.2f\t\t%.2f\n", hr, min, Elev, Azimut);
+        }
+    }
+
+    return 0;
+}
