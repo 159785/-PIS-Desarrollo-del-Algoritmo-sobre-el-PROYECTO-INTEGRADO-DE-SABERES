@@ -1,0 +1,128 @@
+Algoritmo PROYECTOPIS
+	Lat <- -3.99313
+	Long <- -79.20422
+	// RESULTADOS DE LA FECHA DEL SISTEMA/
+	fech <- FechaActual()
+	fech_txt <- ConvertirATexto(fech)
+	f1 <- Subcadena(fech_txt,1,4)
+	F2 <- Subcadena(fech_txt,5,6)
+	F3 <- Subcadena(fech_txt,7,8)
+	dia <- ConvertirANumero(F3)
+	mes <- ConvertirANumero(F2)
+	mes <- mes-1
+	ano <- ConvertirANumero(f1)
+	// RESULTADOS  DE LA HORA DEL SISTEMA//
+	hora_act <- HoraActual()
+	hora_txt <- ConvertirATexto(hora_act)
+	H1 <- Subcadena(hora_txt,1,2)
+	H2 <- Subcadena(hora_txt,3,4)
+	hr <- ConvertirANumero(H1)
+	min <- ConvertirANumero(H2)
+	// RESULTADO DE LOS DIAS TRANSCURRIDOS//
+	N <- Calcular_numero_dias(mes,dia,ano)
+	// RESULTADOS DE LA DECLINACIÓN SOLAR //
+	Decl <- Calcular_angulo_declinacion(N)
+	// RESULTADOS DE LA ECUACIÓN DEL TIEMPO//
+	EoT <- Calcular_ecuacion_tiempo(N)
+	// RESUTADOS DEL TIEMPO SOLAR VERDADERO//
+	TSV <- Calcular_TSV(hr,min,Long,EoT)
+	hr_solar <- trunc(TSV)
+	min_solar <- redon(60*(TSV-hr_solar))
+	// RESULTADOS DE LA HORA A PARTIR DEL MERIDIANO DE GREENWICH//
+	H <- Calcular_H(TSV)
+	// RESULTADOS EN RADIANES DE LA DECLINACIÓN SOLAR //
+	Decl <- Decl*(PI/180)
+	// RESULTADOS EN RADIANES DE LA LATITUD
+	Lat <- Lat*(PI/180)
+	// RESULTADOS EN GRADOS DE LA ALTITUD DEL SOL//
+	AS <- Calcular_AS(Decl,Lat,H)
+	AS_Grad <- AS*(180/PI)
+	// RESULTADOS FINALES RESPESCTO AL AZIMUT EN GRADOS//
+	Azim <- Calcular_Azimut(Decl,AS,Lat,H)
+	Azim_Grad <- Azim*(180/PI)
+	Escribir 'COMO RESULTAOD DEL CALCULO A PARTIR DE LA ALTITUD Y LONGITUD SE OBTUVO QUE, LA ALTITUD SOLAR  ES IGUAL A ', AS_Grad, 'Y LA ORIENTACIÓN SOLAR CON RESPECTO AL NORTE ES IGUAL A ', Azim_Grad
+FinAlgoritmo
+
+Función N <- Calcular_numero_dias(mes,dia,ano)
+	Para i<-1 Hasta mes Con Paso 1 Hacer
+		Según i Hacer
+			1:
+				N <- N+31
+			2:
+				N <- N+28
+			3:
+				N <- N+31
+			4:
+				N <- N+30
+			5:
+				N <- N+31
+			6:
+				N <- N+30
+			7:
+				N <- N+31
+			8:
+				N <- N+31
+			9:
+				N <- N+30
+			10:
+				N <- N+31
+			11:
+				N <- N+30
+			12:
+				N <- N+31
+		FinSegún
+	FinPara
+	N <- N+dia
+	Si ano MOD 4==0 Entonces
+		Si ano MOD 100==0 Entonces
+			Si ano MOD 400==0 Entonces
+				N <- N+1
+			FinSi
+		SiNo
+			N <- N+1
+		FinSi
+	FinSi
+FinFunción
+
+// CALCULO DEL ANGULO DE INCLINACIÓN
+Función Decl <- Calcular_angulo_declinacion(N)
+	Term_1 <- -23.44
+	Term_2 <- ((360/365)*(N+10))
+	DS_rad <- Term_2*(PI/180)
+	COSX <- cos(DS_rad)
+	Decl <- Term_1*COSX
+FinFunción
+
+// CALCULO DE LA ECUACIÓN DEL TIEMPO
+Función EoT <- Calcular_ecuacion_tiempo(N)
+	B <- ((360/365)*(N-81))
+	B <- B*(PI/180)
+	EoT <- 9.87*sen(2*B)-7.53*cos(B)-1.5*sen(B)
+FinFunción
+
+// CALCULO DEL TIEMPO SOLAR VERDADERO
+Función TSV <- Calcular_TSV(hr,min,Long,EoT)
+	hr_local <- hr+(min/60)
+	zona_hor <- -5
+	long_stand <- zona_hor*15
+	TSV <- hr_local+(((4*(Long-long_stand))+EoT)/60)
+FinFunción
+
+// CALCULO DE LA HORA GTM
+Función H <- Calcular_H(TSV)
+	H <- 15*(TSV-12)
+	H <- H*(PI/180)
+FinFunción
+
+// CALCULO DEL ARCOSENO PRINCIPAL
+Función AS <- Calcular_AS(Decl,Lat,H)
+	AS <- asen(sen(Decl)*sen(Lat)+cos(Decl)*cos(Lat)*cos(H))
+FinFunción
+
+// CALCULO DEL ALZIMUT PRINCIPAL
+Función Azim <- Calcular_Azimut(Decl,AS,Lat,H)
+	Azim <- acos((sen(Decl)-sen(AS)*sen(Lat))/(cos(AS)*cos(Lat)))
+	Si H>0 Entonces
+		Azim <- 2*PI-Azim
+	FinSi
+FinFunción
