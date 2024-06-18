@@ -1,6 +1,6 @@
 ## PROYECTO pis
 
-##Autores 
+## Autores 
 - Steeven Arevalo
 - Luis Blacio
 - Johan Chumbi
