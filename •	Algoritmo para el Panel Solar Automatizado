@@ -1,8 +1,10 @@
-#include <stdio.h>
-#include <math.h>
-#include <time.h>
-#include <unistd.h>  // Necesario para sleep
-#include <stdlib.h>  // Necesario para setenv
+#include <stdio.h>   //Principal
+#include <math.h>    // Funciones trigonometricas
+#include <time.h>    // Fecha y hora
+#include <unistd.h>  // Necesario para pausar el programa
+#include <stdlib.h>  // Necesario para obtener la hora GMT-5 de Ecuador
+#include <ctype.h>   // Necesario para la manipulación de caracteres
+#include <string.h>   // Necesario para la manipulación de cadenas
 
 #define PI 3.14159265359
 
@@ -83,10 +85,70 @@ double calcular_Azimut(double Decl, double Elev, double Lat, double H) {
     return Azim;
 }
 
-int main() {
-    double Lat = -3.99313 * (PI / 180.0);  // Convertir a radianes
-    double Long = -79.20422;
+// Función para validar entrada decimal, permitiendo negativos y coma
+int validar_decimal(char *entrada) {
+    int punto_visto = 0;
+    if (*entrada == '-') {
+        entrada++;
+    }
+    while (*entrada) {
+        if (!isdigit(*entrada)) {
+            if ((*entrada == '.' || *entrada == ',') && !punto_visto) {
+                punto_visto = 1;
+            } else {
+                return 0;
+            }
+        }
+        entrada++;
+    }
+    return 1;
+}
 
+// Función para reemplazar coma con punto
+void reemplazar_coma(char *entrada) {
+    while (*entrada) {
+        if (*entrada == ',') {
+            *entrada = '.';
+        }
+        entrada++;
+    }
+}
+
+int main() {
+    char lat_input[20];
+    char long_input[20];
+    double Lat, Long;
+
+    // Mensaje de bienvenida
+    printf("Bienvenido al programa de cálculo solar.\n");
+    printf("*********************************************\n");
+    // Entrada de latitud
+    while (1) {
+        printf("Ingrese la latitud (en grados decimales, puede ser negativa): ");
+        scanf("%s", lat_input);
+        if (validar_decimal(lat_input)) {
+            reemplazar_coma(lat_input);
+            Lat = atof(lat_input) * (PI / 180.0);  // Convertir a radianes
+            break;
+        } else {
+            printf("Error: Solo se pueden ingresar números decimales.\n");
+        }
+    }
+     printf("*********************************************\n");
+
+    // Entrada de longitud
+    while (1) {
+        printf("Ingrese la longitud (en grados decimales, puede ser negativa): ");
+        scanf("%s", long_input);
+        if (validar_decimal(long_input)) {
+            reemplazar_coma(long_input);
+            Long = atof(long_input);
+            break;
+        } else {
+            printf("Error: Solo se pueden ingresar números decimales.\n");
+        }
+    }
+    printf("*********************************************\n");
     // Establecer zona horaria manualmente si es necesario (Ecuador: GMT-5)
     setenv("TZ", "America/Guayaquil", 1);
     tzset();
@@ -139,7 +201,7 @@ int main() {
 
         // Imprimir resultados
         printf("Fecha: %d/%d/%d\n", dia, mes, ano);
-        printf("Coordenadas: %.7f, %.7f\n", -3.99313, -79.20422);
+        printf("Coordenadas: %.7f, %.7f\n", Lat * (180.0 / PI), Long);
         printf("Hora\t\tElevación\tAzimut\n");
         printf("%02d:%02d:00\t%.2f\t\t%.2f\n", hr, min, Elev, Azimut);
 
@@ -149,3 +211,4 @@ int main() {
 
     return 0;
 }
+
