@@ -43,4 +43,4 @@ En este programa podemos requerir coordenadas como latitud y la longitud como fu
 Estas direcciones le proporcionan las etapas importantes para ejecutar el programa y dan direcciones geográficas como información.
 
 #### Trabajo Grupal sobre el Proyecto Integrado De Saberes
-- https://github.com/159785/Desarrollo-del-Algoritmo-sobre-el-PROYECTO-INTEGRADO-DE-SABERES-PIS-/blob/80493e62fb73a9276d377b33df22f3bbf5f5a594/Algoritmo%20para%20el%20Panel%20Solar%20Automatizado
+- https://github.com/159785/Desarrollo-del-Algoritmo-sobre-el-PROYECTO-INTEGRADO-DE-SABERES-PIS-/blob/ad3779a7011e24fe8d4f8e617c5c3cdced7f58ee/%E2%80%A2%09Algoritmo%20para%20el%20Panel%20Solar%20Automatizado
