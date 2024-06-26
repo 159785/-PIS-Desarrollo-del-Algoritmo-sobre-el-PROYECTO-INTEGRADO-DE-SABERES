@@ -1,4 +1,4 @@
-## PROYECTO pis
+## PROYECTO PIS
 
 ## Autores 
 - Steeven Arevalo
