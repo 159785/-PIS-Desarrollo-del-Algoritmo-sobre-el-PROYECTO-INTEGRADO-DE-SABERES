@@ -1,14 +1,23 @@
-// C++ code
-//
-void setup()
-{
-  pinMode(LED_BUILTIN, OUTPUT);
+#include <Servo.h>
+
+Servo myservo;  // crea un objeto servo para controlar el servomotor
+
+int ldrPin = A0;  // pin donde está conectada la LDR
+int servoPin = 9;  // pin donde está conectado el servomotor
+int ldrValue;  // variable para almacenar el valor de la LDR
+
+void setup() {
+  myservo.attach(servoPin);  // adjunta el servomotor al pin 9
+  Serial.begin(9600);  // inicializa la comunicación serial
 }
 
-void loop()
-{
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000); // Wait for 1000 millisecond(s)
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(1000); // Wait for 1000 millisecond(s)
+void loop() {
+  ldrValue = analogRead(ldrPin);  // lee el valor de la LDR
+  int servoAngle = map(ldrValue, 0, 1023, 0, 180);  // mapea el valor de la LDR a un ángulo de 0 a 180 grados
+  myservo.write(servoAngle);  // mueve el servomotor al ángulo calculado
+  Serial.print("LDR Value: "); 
+  Serial.print(ldrValue);
+  Serial.print(" - Servo Angle: ");
+  Serial.println(servoAngle);
+  delay(100);  // pequeña pausa antes de la siguiente lectura
 }
