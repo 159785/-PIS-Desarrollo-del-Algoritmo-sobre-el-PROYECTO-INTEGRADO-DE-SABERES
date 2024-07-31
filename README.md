@@ -34,13 +34,13 @@ Clonar un repositorio y compilar un código es un ciclo básico en la mejora de 
 
 ### Uso
 
-En este programa podemos requerir coordenadas como latitud y la longitud como fuentes de datos.
+El programa ya tiene predeterminado la latitud y longitud
 
-- En este modelo, 37.7749 es latitud y - 122.4194 es longitud.
-- Las coordenadas deben mencionarse después de que el programa se ejecute efectivamente.
-- En ese momento, el programa solicitará las coordenadas del usuario en función de la zona, para mostrar los resultados obtenidos del usuario.
+- En el modelo, la latitud -3.99313 y longitud -79.20422.
+- En ese momento, el programa calcularia la latitud y el azimut de la zona predeterminada.
+- Esto causara una reaccion en las fotoresistencias que perimitira seguir la luz del sol.
 
 Estas direcciones le proporcionan las etapas importantes para ejecutar el programa y dan direcciones geográficas como información.
 
 #### Trabajo Grupal sobre el Proyecto Integrado De Saberes
-- https://github.com/159785/Desarrollo-del-Algoritmo-sobre-el-PROYECTO-INTEGRADO-DE-SABERES-PIS-/blob/ad3779a7011e24fe8d4f8e617c5c3cdced7f58ee/%E2%80%A2%09Algoritmo%20para%20el%20Panel%20Solar%20Automatizado
+- https://github.com/159785/-PIS-Desarrollo-del-Algoritmo-sobre-el-PROYECTO-INTEGRADO-DE-SABERES
