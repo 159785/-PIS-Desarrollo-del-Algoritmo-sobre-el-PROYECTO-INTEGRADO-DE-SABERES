@@ -1,10 +1,12 @@
-#include <stdio.h>   //Principal
-#include <math.h>    // Funciones trigonometricas
-#include <time.h>    // Fecha y hora
-#include <unistd.h>  // Necesario para pausar el programa
-#include <stdlib.h>  // Necesario para obtener la hora GMT-5 de Ecuador
-#include <ctype.h>   // Necesario para la manipulación de caracteres
-#include <string.h>   // Necesario para la manipulación de cadenas
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #define PI 3.14159265359
 
@@ -56,7 +58,7 @@ double calcular_ecuacion_tiempo(int N) {
     return EoT;
 }
 
-// Función para calcular el tiempo solar verdadero
+// Función para calcular el tiempo solar verdadero (TSV)
 double calcular_TSV(double hr, double min, double Long, double EoT) {
     double hr_local = hr + (min / 60.0);
     double zona_hor = -5;  // Ajusta esta línea según tu zona horaria si es necesario
@@ -65,7 +67,7 @@ double calcular_TSV(double hr, double min, double Long, double EoT) {
     return TSV;
 }
 
-// Función para calcular la hora GMT
+// Función para calcular la hora solar (H)
 double calcular_H(double TSV) {
     double H = 15 * (TSV - 12);
     return H * (PI / 180.0);  // Convertir a radianes
@@ -76,82 +78,32 @@ double calcular_elevacion(double Decl, double Lat, double H) {
     return asin(sin(Decl) * sin(Lat) + cos(Decl) * cos(Lat) * cos(H));
 }
 
-// Función para calcular el azimut principal
+// Función para calcular el azimut solar
 double calcular_Azimut(double Decl, double Elev, double Lat, double H) {
     double Azim = acos((sin(Decl) - sin(Elev) * sin(Lat)) / (cos(Elev) * cos(Lat)));
     if (H > 0) {
         Azim = 2 * PI - Azim;
     }
+    if (Azim > PI) { // Si el azimut supera los 180 grados (PI radianes)
+        Azim -= PI;  // Restar 180 grados (PI radianes)
+    }
     return Azim;
 }
 
-// Función para validar entrada decimal, permitiendo negativos y coma
-int validar_decimal(char *entrada) {
-    int punto_visto = 0;
-    if (*entrada == '-') {
-        entrada++;
-    }
-    while (*entrada) {
-        if (!isdigit(*entrada)) {
-            if ((*entrada == '.' || *entrada == ',') && !punto_visto) {
-                punto_visto = 1;
-            } else {
-                return 0;
-            }
-        }
-        entrada++;
-    }
-    return 1;
-}
-
-// Función para reemplazar coma con punto
-void reemplazar_coma(char *entrada) {
-    while (*entrada) {
-        if (*entrada == ',') {
-            *entrada = '.';
-        }
-        entrada++;
-    }
-}
-
 int main() {
-    char lat_input[20];
-    char long_input[20];
-    double Lat, Long;
+    double Lat = -3.99313 * (PI / 180.0);  // Latitud en radianes
+    double Long = -79.20422;               // Longitud en grados decimales
 
-    // Mensaje de bienvenida
-    printf("Bienvenido al programa de cálculo solar.\n");
-    printf("*********************************************\n");
-    // Entrada de latitud
-    while (1) {
-        printf("Ingrese la latitud (en grados decimales, puede ser negativa): ");
-        scanf("%s", lat_input);
-        if (validar_decimal(lat_input)) {
-            reemplazar_coma(lat_input);
-            Lat = atof(lat_input) * (PI / 180.0);  // Convertir a radianes
-            break;
-        } else {
-            printf("Error: Solo se pueden ingresar números decimales.\n");
-        }
-    }
-     printf("*********************************************\n");
-
-    // Entrada de longitud
-    while (1) {
-        printf("Ingrese la longitud (en grados decimales, puede ser negativa): ");
-        scanf("%s", long_input);
-        if (validar_decimal(long_input)) {
-            reemplazar_coma(long_input);
-            Long = atof(long_input);
-            break;
-        } else {
-            printf("Error: Solo se pueden ingresar números decimales.\n");
-        }
-    }
-    printf("*********************************************\n");
-    // Establecer zona horaria manualmente si es necesario (Ecuador: GMT-5)
+    // Establecer la zona horaria de Ecuador (GMT-5)
     setenv("TZ", "America/Guayaquil", 1);
     tzset();
+
+    // Abrir el puerto serial
+    FILE *serial = fopen("COM3", "w"); // Cambia "COM3" por el puerto serial adecuado en tu sistema
+    if (serial == NULL) {
+        printf("No se pudo abrir el puerto serial\n");
+        return 1;
+    }
 
     while (1) {
         // Obtener la fecha y hora actuales
@@ -180,13 +132,13 @@ int main() {
         // Calcular el ángulo de declinación solar
         double Decl = calcular_angulo_declinacion(N);
 
-        // Calcular la ecuación del tiempo
+        // Calcular la ecuación del tiempo (EoT)
         double EoT = calcular_ecuacion_tiempo(N);
 
-        // Calcular el tiempo solar verdadero
+        // Calcular el tiempo solar verdadero (TSV)
         double TSV = calcular_TSV(hr, min, Long, EoT);
 
-        // Calcular la hora GMT
+        // Calcular la hora solar (H)
         double H = calcular_H(TSV);
 
         // Calcular la elevación solar
@@ -195,19 +147,22 @@ int main() {
         // Calcular el azimut solar
         double Azimut = calcular_Azimut(Decl, Elev, Lat, H);
 
-        // Convertir resultados a grados para imprimir
+        // Convertir resultados a grados para enviar
         Elev *= (180.0 / PI);
         Azimut *= (180.0 / PI);
 
-        // Imprimir resultados
-        printf("Fecha: %d/%d/%d\n", dia, mes, ano);
-        printf("Coordenadas: %.7f, %.7f\n", Lat * (180.0 / PI), Long);
-        printf("Hora\t\tElevación\tAzimut\n");
-        printf("%02d:%02d:00\t%.2f\t\t%.2f\n", hr, min, Elev, Azimut);
+        // Enviar los resultados de elevación y azimut a través del puerto serial
+        fprintf(serial, "Elevacion: %.2f, Azimut: %.2f\n", Elev, Azimut);
+        fflush(serial);  // Asegurar que los datos se envíen inmediatamente
 
-        // Esperar 5 minutos
+        // Imprimir resultados en la consola para verificación
+        printf("Elevacion: %.2f, Azimut: %.2f\n", Elev, Azimut);
+
+        // Pausar el programa por 5 minutos (300 segundos)
         sleep(300);
     }
+
+    fclose(serial); // Cerrar el puerto serial
 
     return 0;
 }
