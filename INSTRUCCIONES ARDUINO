@@ -1,23 +1,144 @@
 #include <Servo.h>
 
-Servo myservo;  // crea un objeto servo para controlar el servomotor
+// Definiendo Servos
+Servo servohori;
+int servoh = 0;
+int servohLimitHigh = 160;
+int servohLimitLow = 20;
 
-int ldrPin = A0;  // pin donde está conectada la LDR
-int servoPin = 9;  // pin donde está conectado el servomotor
-int ldrValue;  // variable para almacenar el valor de la LDR
+Servo servoverti; 
+int servov = 0; 
+int servovLimitHigh = 160;
+int servovLimitLow = 20;
 
-void setup() {
-  myservo.attach(servoPin);  // adjunta el servomotor al pin 9
-  Serial.begin(9600);  // inicializa la comunicación serial
+// Asignando LDRs
+int ldrtopl = 2; // top left LDR
+int ldrtopr = 1; // top right LDR
+int ldrbotl = 3; // bottom left LDR
+int ldrbotr = 0; // bottom right LDR
+
+// Pin del botón para cambiar de modo
+const int modeButtonPin = 8;
+bool isAzimuthMode = false; // Estado del modo
+
+void setup() 
+{
+  servohori.attach(10);
+  servohori.write(0);
+  servoverti.attach(9);
+  servoverti.write(0);
+  pinMode(modeButtonPin, INPUT_PULLUP); // Configurar el pin del botón como entrada con resistencia pull-up
+  Serial.begin(9600); // Iniciar la comunicación serial
+  delay(500);
 }
 
-void loop() {
-  ldrValue = analogRead(ldrPin);  // lee el valor de la LDR
-  int servoAngle = map(ldrValue, 0, 1023, 0, 180);  // mapea el valor de la LDR a un ángulo de 0 a 180 grados
-  myservo.write(servoAngle);  // mueve el servomotor al ángulo calculado
-  Serial.print("LDR Value: "); 
-  Serial.print(ldrValue);
-  Serial.print(" - Servo Angle: ");
-  Serial.println(servoAngle);
-  delay(100);  // pequeña pausa antes de la siguiente lectura
+void loop()
+{
+  // Verificar si se presionó el botón para cambiar de modo
+  if (digitalRead(modeButtonPin) == LOW) {
+    isAzimuthMode = !isAzimuthMode; // Cambiar el modo
+    delay(500); // Evitar el rebote del botón
+  }
+  
+  if (isAzimuthMode) {
+    modoAzimutAngulo(); // Modo de Azimut y Altitud
+  } else {
+    modoSeguimientoLuz(); // Modo de Seguimiento de Luz
+  }
 }
+
+void modoSeguimientoLuz() {
+  // Capturando valores analógicos de cada LDR
+  int topl = analogRead(ldrtopl);
+  int topr = analogRead(ldrtopr);
+  int botl = analogRead(ldrbotl);
+  int botr = analogRead(ldrbotr);
+  
+  // Calculando el Promedio
+  int avgtop = (topl + topr) / 2; // Promedio del top LDRs
+  int avgbot = (botl + botr) / 2; // Promedio del bottom LDRs
+  int avgleft = (topl + botl) / 2; // Promedio del left LDRs
+  int avgright = (topr + botr) / 2; // Promedio del right LDRs
+
+  if (avgtop < avgbot)
+  {
+    servov++;
+    if (servov > servovLimitHigh) 
+     { 
+      servov = servovLimitHigh;
+     }
+    servoverti.write(servov);
+    delay(10);
+  }
+  else if (avgbot < avgtop)
+  {
+    servov--;
+    if (servov < servovLimitLow)
+  {
+    servov = servovLimitLow;
+  }
+    servoverti.write(servov);
+    delay(10);
+  }
+  
+  if (avgleft > avgright)
+  {
+    servoh++;
+    if (servoh > servohLimitHigh)
+    {
+    servoh = servohLimitHigh;
+    }
+    servohori.write(servoh);
+    delay(10);
+  }
+  else if (avgright > avgleft)
+  {
+    servoh--;
+    if (servoh < servohLimitLow)
+     {
+     servoh = servohLimitLow;
+     }
+    servohori.write(servoh);
+    delay(10);
+  }
+  delay(50);
+}
+
+void modoAzimutAngulo() {
+  Serial.println("Modo Azimut y Angulo Solar");
+
+  // Verificar si hay datos disponibles en el puerto serial
+  if (Serial.available() > 0) {
+    // Leer los datos desde el puerto serial
+    String data = Serial.readStringUntil('\n'); // Leer una línea completa hasta el salto de línea
+    
+    // Separar los valores
+    int spaceIndex = data.indexOf(' ');
+    if (spaceIndex != -1) {
+      String val1Str = data.substring(0, spaceIndex);
+      String val2Str = data.substring(spaceIndex + 1);
+
+      // Convertir los valores a enteros
+      int servox = val1Str.toInt();
+      int servoy = val2Str.toInt();
+
+      // Mostrar los valores recibidos para depuración
+      Serial.print("Recibido: ");
+      Serial.print(servoy);
+      Serial.print(" ");
+      Serial.println(servox);
+
+      // Asegurarse de que los ángulos estén dentro del rango válido
+      servox = constrain(servox, servohLimitLow, servohLimitHigh);
+      servoy = constrain(servoy, servovLimitLow, servovLimitHigh);
+
+      // Actualizar los ángulos de los servos
+      servohori.write(servoy);
+      servoverti.write(servox);
+    } else {
+      // Mensaje de error si no se pudo separar correctamente
+      Serial.println("Error: Datos recibidos no válidos");
+    }
+  }
+}
+
